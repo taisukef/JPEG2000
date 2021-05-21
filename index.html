@@ -1,0 +1,54 @@
+<!DOCTYPE html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width">
+<title>decodeJPEG2000 test</title>
+</head>
+
+<script type=module>
+import { JPEG2000 } from "./JPEG2000.js";
+
+window.onload = async () => {
+    const img = "megane-kaikan.jp2";
+    const data = new Uint8Array(await (await fetch(img)).arrayBuffer());
+
+    let t0 = performance.now();
+    const jpximg = JPEG2000.decode(data);
+    let t1 = performance.now();
+    console.log((t1 - t0) + " msec")
+    console.log(jpximg);
+
+    const ctx = canvas.getContext('2d')
+    canvas.width = jpximg.width;
+    canvas.height = jpximg.height;
+
+    console.log(jpximg.channels);
+    const imgd = ctx.createImageData(jpximg.width, jpximg.height);
+    if (jpximg.channels == 1) { // grayscale
+        for (let i = 0; i < jpximg.width * jpximg.height; i++) {
+            const val = jpximg.data[i * jpximg.channels];
+            imgd.data[i * 4 + 0] = val;
+            imgd.data[i * 4 + 1] = val;
+            imgd.data[i * 4 + 2] = val;
+            imgd.data[i * 4 + 3] = 255;
+        }
+    } else if (jpximg.channels == 3) { // color
+        for (let i = 0; i < jpximg.width * jpximg.height; i++) {
+            imgd.data[i * 4 + 0] = jpximg.data[i * 3 + 0];
+            imgd.data[i * 4 + 1] = jpximg.data[i * 3 + 1];
+            imgd.data[i * 4 + 2] = jpximg.data[i * 3 + 2];
+            imgd.data[i * 4 + 3] = 255;
+        }
+    } else if (jpximg.channels == 4) { // with alpha
+        for (let i = 0; i < jpximg.width * jpximg.height; i++) {
+            imgd.data[i * 4 + 0] = jpximg.data[i * 4 + 0];
+            imgd.data[i * 4 + 1] = jpximg.data[i * 4 + 1];
+            imgd.data[i * 4 + 2] = jpximg.data[i * 4 + 2];
+            imgd.data[i * 4 + 3] = jpximg.data[i * 4 + 3];
+        }
+    }
+    ctx.putImageData(imgd, 0, 0);
+};
+</script>
+
+<body>
+<canvas id="canvas"></canvas>
+</body>
+</html>
